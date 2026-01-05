@@ -39,8 +39,11 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
 
   Future<void> _pickSound(int index) async {
     try {
+      // Using FileType.custom with specific extensions is often more reliable 
+      // across different platforms and browsers than FileType.audio
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
+        type: FileType.custom,
+        allowedExtensions: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'mid', 'midi'],
         allowMultiple: false,
       );
 
@@ -50,9 +53,14 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
         });
       }
     } catch (e) {
+      debugPrint('Error picking file: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking file: $e')),
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -62,7 +70,10 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
     // Check if any sounds are assigned
     if (_assignedSounds.every((sound) => sound == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please assign at least one sound before uploading.')),
+        const SnackBar(
+          content: Text('Please assign at least one sound before uploading.'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -84,6 +95,7 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Upload Complete'),
           content: const Text('Sound configuration has been uploaded to the Pico Launchpad.'),
+          icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -101,13 +113,14 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
       appBar: AppBar(
         title: const Text('Pico Launchpad Setup'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        centerTitle: true,
       ),
       body: Column(
         children: [
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
-              'Tap a button to assign a sound',
+              'Tap a button to assign a sound file',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
@@ -131,6 +144,7 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
                       ? Theme.of(context).colorScheme.primaryContainer 
                       : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(12),
+                  elevation: isAssigned ? 2 : 0,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => _pickSound(index),
@@ -148,7 +162,7 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            isAssigned ? Icons.music_note : Icons.add,
+                            isAssigned ? Icons.audio_file : Icons.add_circle_outline,
                             color: isAssigned 
                                 ? Theme.of(context).colorScheme.primary 
                                 : Colors.grey.shade600,
@@ -199,14 +213,17 @@ class _LaunchpadScreenState extends State<LaunchpadScreen> {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: _isUploading 
                     ? Container(
                         width: 24, 
                         height: 24, 
                         padding: const EdgeInsets.all(2),
-                        child: const CircularProgressIndicator(
-                          color: Colors.white, 
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary, 
                           strokeWidth: 3,
                         ),
                       )
